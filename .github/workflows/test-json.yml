@@ -1,0 +1,37 @@
+name: JSON EVENTS(every 5 minutes)
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # 깃허브 레포지토리에 이벤트가 발생할 때마다 수동호출
+
+jobs:
+  test-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 레포 체크아웃
+        uses: actions/checkout@v3
+
+      - name: test.json 호출
+        run: |
+          curr_min=$(( $(date +'%M') + 1 ))
+          url="https://jsonplaceholder.typicode.com/todos/$curr_min"
+          mkdir -p data
+          curl -s "$url" -o data/test.json
+
+      - name: set git
+        run: | 
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: git commit & push
+        run: |
+          curr_min=$(( $(date +'%M') + 1 ))
+          git add .
+          if git diff --cached --quiet;
+          then echo "No changes"
+          else
+            git commit -m "갱신 ${curr_min}"
+            git push
+          fi
